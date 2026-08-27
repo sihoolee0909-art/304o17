@@ -1,0 +1,49 @@
+@st.cache_data(ttl=86400)
+def get_image(search):
+
+    url = "https://commons.wikimedia.org/w/api.php"
+
+    params = {
+        "action": "query",
+        "generator": "search",
+        "gsrsearch": search,
+        "gsrnamespace": 6,
+        "gsrlimit": 5,          # 1개 → 5개로 변경
+        "prop": "imageinfo",
+        "iiprop": "url",
+        "iiurlwidth": 1200,     # 큰 이미지
+        "format": "json"
+    }
+
+    try:
+        response = requests.get(
+            url,
+            params=params,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        pages = data.get("query", {}).get("pages", {})
+
+        images = []
+
+        for page in pages.values():
+
+            info = page.get("imageinfo", [])
+
+            if info:
+                image_url = info[0].get("thumburl")
+
+                if not image_url:
+                    image_url = info[0].get("url")
+
+                if image_url:
+                    images.append(image_url)
+
+        return images
+
+    except Exception as e:
+        return []
